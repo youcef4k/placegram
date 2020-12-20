@@ -1,3 +1,4 @@
+const fs = require('fs');
 const httpError = require("../models/http-error");
 
 const Place = require("../models/place");
@@ -56,11 +57,11 @@ const addPlace = async (req, res, next) => {
     console.log(errors);
     return next(new httpError("Invalid input passed", 422));
   }
-  const { title, description, image, coordinates, address, creator } = req.body;
+  const { title, description, coordinates, address, creator } = req.body;
   const newPlace = new Place({
     title: title,
     description: description,
-    image: image,
+    image: req.file.path,
     location: coordinates,
     address: address,
     creator: creator,
@@ -154,6 +155,8 @@ const deletePlace = async (req, res, next) => {
     return next(error);
   }
 
+  const imagePath = place.image;
+
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
@@ -168,6 +171,10 @@ const deletePlace = async (req, res, next) => {
     );
     return next(error);
   }
+
+  fs.unlink(imagePath, (err) => {
+    console.log(err);
+  });
 
   res.status(200).json({ message: "sucessfully deleted!" });
 };

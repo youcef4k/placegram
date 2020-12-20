@@ -20,10 +20,11 @@ const getUsers = async (req, res, next) => {
 const signup = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+
     console.log(errors);
     return next(new httpError("Invalid input passed", 422));
   }
-  const { name, email, password, image } = req.body;
+  const { name, email, password } = req.body;
 
   let existingUser;
   try {
@@ -42,7 +43,7 @@ const signup = async (req, res, next) => {
     name: name,
     email: email,
     password: password,
-    image: image,
+    image: req.file.path,
     places: [],
   });
 

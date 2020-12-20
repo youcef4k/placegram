@@ -13,6 +13,7 @@ import { useHttpClient } from "../../shared/hooks/http-hook";
 import { AuthContext } from "../../shared/context/auth-context";
 import ErrorModal from "../../shared/components/UIElements/ErrorModal";
 import LoadingSpinner from "../../shared/components/UIElements/LoadingSpinner";
+import ImageUpload from '../../shared/components/FormElements/ImageUpload';
 
 const NewPlace = () => {
   const auth = useContext(AuthContext);
@@ -32,6 +33,10 @@ const NewPlace = () => {
         value: "",
         isValid: false,
       },
+      image: {
+        value: null,
+        isValid: false
+      }
     },
     false
   );
@@ -41,16 +46,16 @@ const NewPlace = () => {
   const formSubmitHandler = async (event) => {
     event.preventDefault();
     try {
+      const formData = new FormData();
+      formData.append('title', formState.inputs.title.value)
+      formData.append('description', formState.inputs.description.value)
+      formData.append('address', formState.inputs.address.value)
+      formData.append('creator', auth.userId)
+      formData.append('image', formState.inputs.image.value)
       await sendRequest(
         "http://localhost:5000/api/places",
         "POST",
-        JSON.stringify({
-          title: formState.inputs.title.value,
-          description: formState.inputs.description.value,
-          address: formState.inputs.address.value,
-          creator: auth.userId,
-        }),
-        { "Content-Type": "application/json" }
+        formData
       );
       history.push('/')
     } catch (err) {}
@@ -87,6 +92,7 @@ const NewPlace = () => {
           onInput={inputHandler}
           errorText="Please enter a valid address."
         />
+        <ImageUpload center id='image' onInput={inputHandler} errorText='Invalid file, only png, jpg, and jpeg files are supported' />
         <Button type="submit" disabled={!formState.isValid}>
           ADD PLACE
         </Button>

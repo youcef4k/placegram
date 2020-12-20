@@ -6,7 +6,7 @@ const User = require("../models/user");
 const getUsers = async (req, res, next) => {
   let users;
   try {
-    users = await User.find({}, '-password');
+    users = await User.find({}, "-password");
   } catch (err) {
     const error = new httpError("Something went wrong, cannot fetch users");
     return next(error);
@@ -27,14 +27,15 @@ const signup = async (req, res, next) => {
 
   let existingUser;
   try {
-    existingUser = User.findOne({ email: email });
-  } catch (err) {
+    existingUser = await User.findOne({ email: email });
+  } catch (err){
     const error = new httpError("Something went wrong, findOne failed");
     return next(error);
   }
 
   if (existingUser) {
     const error = new httpError("User already exists", 422);
+    return next(error);
   }
 
   const newUser = new User({
@@ -56,7 +57,6 @@ const signup = async (req, res, next) => {
 };
 
 const login = async (req, res, next) => {
-
   const { email, password } = req.body;
 
   let existingUser;
@@ -71,7 +71,7 @@ const login = async (req, res, next) => {
     return next(new httpError("Wrong credentials", 401));
   }
 
-  res.json({ message: "You are logged in!" });
+  res.json({ message: "You are logged in!", user: existingUser.toObject({getters: true}) });
 };
 
 exports.getUsers = getUsers;

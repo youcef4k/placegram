@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require("fs");
 const httpError = require("../models/http-error");
 
 const Place = require("../models/place");
@@ -33,7 +33,7 @@ const getPlacesbyUserId = async (req, res, next) => {
   let user;
   try {
     // places = await Place.find({ creator: userId });
-    user = await User.findById(userId).populate('places');
+    user = await User.findById(userId).populate("places");
   } catch (err) {
     const error = new httpError(
       "Something went wrong, cannot find places by User",
@@ -57,19 +57,19 @@ const addPlace = async (req, res, next) => {
     console.log(errors);
     return next(new httpError("Invalid input passed", 422));
   }
-  const { title, description, coordinates, address, creator } = req.body;
+  const { title, description, coordinates, address } = req.body;
   const newPlace = new Place({
     title: title,
     description: description,
     image: req.file.path,
     location: coordinates,
     address: address,
-    creator: creator,
+    creator: req.userData.userId,
   });
 
   let user;
   try {
-    user = await User.findById(creator);
+    user = await User.findById(newPlace.creator);
   } catch (err) {
     const error = new httpError(
       "Creating place failed, please try again later.",
@@ -121,6 +121,11 @@ const updatePlace = async (req, res, next) => {
     return next(error);
   }
 
+  if (place.creator.toString() !== req.userData.userId) {
+    const error = new httpError("You are not allowed to edit this place!", 401);
+    return next(error);
+  }
+
   place.title = title;
   place.description = description;
 
@@ -155,14 +160,19 @@ const deletePlace = async (req, res, next) => {
     return next(error);
   }
 
+  if (place.creator.id !== req.userData.userId) {
+    const error = new httpError("You are not allowed to delete this place!", 401);
+    return next(error);
+  }
+
   const imagePath = place.image;
 
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    await place.remove({session: sess});
-    place.creator.places.pull(place)
-    await place.creator.save({session: sess});
+    await place.remove({ session: sess });
+    place.creator.places.pull(place);
+    await place.creator.save({ session: sess });
     sess.commitTransaction();
   } catch (err) {
     const error = new httpError(
